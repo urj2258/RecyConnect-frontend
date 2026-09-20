@@ -6,6 +6,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/services/collector_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/constants/map_constants.dart';
+import '../../widgets/warehouse/collector_status_panel.dart';
 
 class CollectorTrackingScreen extends StatefulWidget {
   final Map<String, dynamic> collector;
@@ -193,7 +195,7 @@ class _CollectorTrackingScreenState extends State<CollectorTrackingScreen> {
         return LatLng(sourceLat, sourceLon);
       }
     }
-    return const LatLng(31.4015, 74.2405); // Default Lahore / Islamabad coordinates
+    return MapConstants.defaultLocation;
   }
 
   @override
@@ -245,8 +247,8 @@ class _CollectorTrackingScreenState extends State<CollectorTrackingScreen> {
                       ),
                       children: [
                         TileLayer(
-                          urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-                          subdomains: const ['a', 'b', 'c', 'd'],
+                          urlTemplate: MapConstants.baseMapUrl,
+                          subdomains: MapConstants.mapSubdomains,
                           userAgentPackageName: 'com.recyconnect.app',
                         ),
 
@@ -431,133 +433,10 @@ class _CollectorTrackingScreenState extends State<CollectorTrackingScreen> {
                       bottom: 0,
                       left: 0,
                       right: 0,
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.15),
-                              blurRadius: 10,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      widget.collector['name'],
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                                    ),
-                                    Text(
-                                      'ID: ${widget.collector['collectorId']}',
-                                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                                    ),
-                                  ],
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: (_activeTrip?['status'] == 'IN_TRANSIT' ? Colors.green : Colors.blue).withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    _activeTrip?['status'] ?? 'ON ASSIGNMENT',
-                                    style: TextStyle(
-                                      color: _activeTrip?['status'] == 'IN_TRANSIT' ? Colors.green[800] : Colors.blue[800],
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const Divider(height: 24),
-                            const Text(
-                              'Assigned Tasks Sequence:',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                            const SizedBox(height: 10),
-                            SizedBox(
-                              height: 90,
-                              child: _tasks.isEmpty
-                                  ? Center(
-                                      child: Text(
-                                        'No active tasks found in this trip.',
-                                        style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                                      ),
-                                    )
-                                  : ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: _tasks.length,
-                                      itemBuilder: (context, i) {
-                                        final t = _tasks[i];
-                                        final status = t['status'] ?? 'ASSIGNED';
-                                        final isCompleted = status == 'COMPLETED';
-                                        final isPickedUp = status == 'PICKED_UP' || status == 'IN_TRANSIT';
-
-                                        Color statusColor = Colors.orange;
-                                        if (isCompleted) {
-                                          statusColor = Colors.green;
-                                        } else if (isPickedUp) {
-                                          statusColor = Colors.blue;
-                                        }
-
-                                        return Container(
-                                          width: 160,
-                                          margin: const EdgeInsets.only(right: 12),
-                                          padding: const EdgeInsets.all(10),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[100],
-                                            borderRadius: BorderRadius.circular(10),
-                                            border: Border.all(color: Colors.grey[300]!),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                'Stop #${i + 1}: Order #${t['orderId']}',
-                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                '${t['materialCategory']} (${t['estimatedWeight']} kg)',
-                                                style: TextStyle(fontSize: 10, color: Colors.grey[700]),
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 6),
-                                              Row(
-                                                children: [
-                                                  Container(
-                                                    width: 8,
-                                                    height: 8,
-                                                    decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
-                                                  ),
-                                                  const SizedBox(width: 6),
-                                                  Text(
-                                                    status.toString().replaceAll('_', ' '),
-                                                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: statusColor),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                    ),
-                            ),
-                          ],
-                        ),
+                      child: CollectorStatusPanel(
+                        collector: widget.collector,
+                        activeTrip: _activeTrip,
+                        tasks: _tasks,
                       ),
                     ),
                   ],
